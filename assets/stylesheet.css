@@ -34,14 +34,10 @@ body {
     background-color: rgb(248, 251, 254);
 
     margin-bottom: 10px;
-    
+    padding-top: 6px;
+    padding-bottom: 6px;
 
-    padding-top: 10px;
-    padding-bottom: 10px;
-    
-    
-
-    width: 78%;
+    width: 79%;
 
     display: flex;
     flex-direction: column;
@@ -49,14 +45,15 @@ body {
     align-items: center;
 }
 .PeriodoReporte{
-    width: 18.8%;
+    width: 250px;
     text-align: center;
     font-weight: bold;
     font-size: 15px;
 
-    height: 200px;
+    height: 260px;
     margin-left: 10px;
-    margin-right: 25px;
+    margin-right: 10px;
+    margin-bottom: 10px;
     align-content: center;
     
     border: rgb(157, 196, 241) 1px solid;
@@ -65,7 +62,7 @@ body {
 
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
 }
 .iconos{
     text-align: center;
@@ -98,11 +95,28 @@ body {
 
 }
 .Titulo1{
-    color: #4da5e3;
+    color: #2a3f5f;
     text-align: center;
-    padding-right: 30px;
-    -webkit-text-stroke: 0.5px black;
+    padding-right: 20px;
+    font-weight: bold;
+    font-size: 16px;
+    margin-top: 12px;
+
+}
+.Factores{
+    font-size: 12px;
+    font-weight: 100;
+    margin-top: 7px;
+    color: rgb(128,128,128);
     
+
+}
+#FormatoFecha{
+    font-weight: 100;
+    color: #2a3f5f;
+    font-size: 12px;
+    margin-top: -10px;
+    color: rgb(128,128,128);
 
 }
 .text{
@@ -146,10 +160,10 @@ body {
 
 }
 .Item{
-    padding-bottom: 10px;
-
+    padding-top: 8px;
     display: flex;
     flex-direction: row;
+    margin
 }
 .ItemOpR{
     width: 50%;
@@ -162,7 +176,7 @@ body {
     margin-left: 30px;
     margin-top: 20px;
 }
-.OperatividadPadre{
+.OperatividadPadreD{
     margin-left: 10px;
     margin-right: 10px;
 
@@ -173,8 +187,8 @@ body {
     display: flex;
     flex-direction: column;
 
-    width: 264px;
-    height: 400px;
+    width: 250px;
+    height: 650px;
 }
 .TitleSistema{
 
@@ -204,7 +218,20 @@ body {
     justify-content: space-around;
     align-content: center;
 
-    width: 78%;
+    width: 79%;
+    border: rgb(157, 196, 241) 1px solid;
+    border-radius: 10px;
+    background-color: rgb(248, 251, 254);
+}
+.ContenedorGraphDrop{
+    margin-left:25% ;
+}
+.GraficosVariables{
+    margin-left: 10px;
+    margin-top: 10px;
+    align-content: center;
+
+    width: 100%;
     border: rgb(157, 196, 241) 1px solid;
     border-radius: 10px;
     background-color: rgb(248, 251, 254);
@@ -230,21 +257,8 @@ body {
     justify-content: space-between;
     align-items: center;
 }
-#CumplimientoTitulo{
-    margin-top: 20px;
-    margin-left: 20px;
-    font-size: 15px;
-    color: #4da5e3;
-}
-#CumplimientoTitulo2{
-    font-size: 15px;
-    color: #4da5e3;
-}
-#TituloDEA{
-    font-size: 15px; 
-    color: #4da5e3;
-    -webkit-text-stroke: 0.5px black
-}
+
+
 #CumplTXT{
     font-size: 15px;
     margin-top: 10px;
@@ -257,13 +271,16 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    align-items: center;
     
     
 
 }
-
 #energiasvg{
     width: 30px;
+}
+#TitlePeriodo{
+    padding-bottom: 15px;
 }
 
 .TituloNominales{
@@ -272,6 +289,7 @@ body {
     margin-top: 5px;
     font-weight: bold;
     font-size: 15px;
+    color:#2A3F5F
 }
 .TituloTabla{
     background-color: #C8D4E3;
@@ -302,4 +320,35 @@ body {
     align-items: center;
     justify-content: space-around;
     flex-wrap: wrap;
+}
+
+.ProdAcum{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.ProdAcumR{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+
+    width: 500px;
+}
+.ProdAcumZ{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+
+    width: 50%;
+}
+.ItemProd{
+    display: flex;
+    flex-direction: column;
+    font-weight: 100;
+    align-items: center;
+    margin-bottom: 5px;
+
 }

@@ -8,6 +8,7 @@ import json
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 #app = Dash(__name__, assets_folder="assetsP", title="Reporte Predictivo")
 
@@ -85,6 +86,7 @@ Operatividad=html.Div([
     
     html.Div([
         html.Div("Periodo del Reporte", className="TitlePeriodo"),
+        html.Div("(AAAA-MM-DD)", id="FormatoFecha"),
         html.Div([html.Div("Fecha Inicio: ", className="ItemOp"), html.Div("--", className="ItemOpR", id="fechaIni")], className="Item"),
         html.Div([html.Div("Fecha Fin: ",    className="ItemOp"), html.Div("--", className="ItemOpR", id="fechaFin")], className="Item"),
         ], className="Periodo"),
@@ -300,8 +302,7 @@ Vibraciones=html.Div([
     ],className="VibracionesPadre")
 Botones=html.Div(
         [
-            dbc.Button('Descargar PDF', id='btn-Descargar', n_clicks=0, className="btn1"),
-            #dbc.Button(children=['Download'],className="mr-1",id='js',n_clicks=0),
+            dbc.Button('Descargar PDF', id='btn-Descargar', n_clicks=0, className="btn1")
 
         ], className="Buttons") 
 
@@ -324,7 +325,6 @@ Cuerpo= html.Div([
 
 layout = html.Div([html.Div([Cuerpo], className="ReportMain", id="Report"),
                        Botones])
-
 def Rotulos(value):
     if value.find("_")!=-1:
         und=value[value.find("_")+1:]
@@ -570,8 +570,8 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
         text=f"<b>{round(Cum/(Cum+Incum)*HORASON,1)} Horas</b>",
         orientation='h',
         marker=dict(
-            color='rgba(16, 141, 228, 0.6)',
-            line=dict(color='rgba(16, 141, 228, 1.0)', width=2)
+            color='#7CBE7F',
+            line=dict(color='green', width=2)
         )
     ))
     CumTHDV.update_layout(
@@ -669,8 +669,8 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
         name=f'Menor a {limTHDI}%',
         orientation='h',
         marker=dict(
-            color='rgba(16, 141, 228, 0.6)',
-            line=dict(color='rgba(16, 141, 228, 1.0)', width=2)
+            color='#7CBE7F',
+            line=dict(color='green', width=2)
         )
     ))
     CumTHDI.update_layout(
@@ -767,8 +767,8 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
         name=f'Menor a {limFactores}%',
         orientation='h',
         marker=dict(
-            color='rgba(16, 141, 228, 0.6)',
-            line=dict(color='rgba(16, 141, 228, 1.0)', width=2)
+            color='#7CBE7F',
+            line=dict(color='green', width=2)
         )
     ))
     CumFactores.update_layout(
@@ -845,7 +845,7 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
                     yaxis_range=Curvas[pozo]["LimY"]
                     )
             
-        elif pozo=="SU74":
+        elif pozo=="SU0074":
             
             GraficoVentana = go.Figure()#        Nombre del Pozo..
             GraficoVentana.add_trace(go.Line(Curvas[pozo]["Hz60"], line = dict(width=2,color = "#00FF88", dash="dash"), type="scatter", name="60Hz", mode="lines"))
@@ -874,7 +874,7 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
                     yaxis_range=Curvas[pozo]["LimY"]
                     )
       
-        elif pozo=="SU05":
+        elif pozo=="SU0005":
             
             GraficoVentana = go.Figure()#        Nombre del Pozo..
             GraficoVentana.add_trace(go.Line(Curvas[pozo]["Hz60"], line = dict(width=2,color = "#00FF88", dash="dash"), type="scatter", name="60Hz", mode="lines"))
@@ -951,6 +951,61 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
                 yaxis_range=[0,6000]
                 )
 
+    
+    #data=pd.DataFrame(pd.read_csv('./Data_Corriente.csv'))
+    
+    data=pd.DataFrame()
+    
+    AMP_MOTOR = (Data["AMPAPQM3_amp"]+Data["AMPBPQM3_amp"]+Data["AMPCPQM3_amp"])/3
+    data['time']=Data['time']
+    data['AMP_MOTOR']=AMP_MOTOR
+    
+    data['time']=pd.to_datetime(data['time'], utc=True)
+    data['time']=data['time']+pd.DateOffset(hours=-5)  
+    data['time']=data['time'].dt.strftime('%d %h %Y,%H:%M:%S')
+    delta=(2 * np.pi)/len(data)
+    rads = np.arange(0, (2 * np.pi), delta)
+    rads=pd.DataFrame(rads,columns=['rads'])
+    data=data.join(rads)
+    data=data.set_index('rads')
+    data=data.dropna()
+    
+    GraficoCarta2 = go.Figure()
+    GraficoCarta2.add_trace(
+        go.Scatterpolar(
+            r = data['AMP_MOTOR'],
+            theta = data['time'],
+            mode = 'lines',
+            name = 'Figure 8',
+            line_color = '#8D10E4'
+        ))
+    GraficoCarta2.update_layout(
+        #title = 'Carta Amperimétrica',
+        showlegend = False,
+        paper_bgcolor="rgb(248, 251, 254)",
+        margin=dict(t=15, b=0, l=0, r=0),
+        width=620,
+        height=300,
+    )
+    GraficoCarta2.update_polars(
+    
+    #      Corrientes
+    radialaxis_range=[0.5*data['AMP_MOTOR'].min(),1.1*data['AMP_MOTOR'].max()],
+    radialaxis_angle = 45,
+    radialaxis_autorange= False,
+    #radialaxis_color="#8D10E4",
+    
+    #       Fechas
+    angularaxis_tick0 = 0.1,
+    angularaxis_nticks=8,
+    angularaxis_tickfont_size=10,
+    angularaxis_color="green",
+    #angularaxis_linecolor="orange"
+    
+    )
+    
+    """
+        
     GraficoCarta = go.Figure()
 
     # Constants
@@ -964,9 +1019,7 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
         y=[0, img_height * scale_factor],
         mode="markers",
         marker_opacity=0
-        )
-    )
-    # Configure axes
+        ))
     GraficoCarta.update_xaxes(
         visible=False,
         range=[0, img_width * scale_factor]
@@ -988,56 +1041,19 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
             opacity=1.0,
             layer="below",
             sizing="stretch",
-            source="/assets/Carta_amperimetrica.png")
+            source="/home/admlinux/7pozos/cs023/carta_amp/Carta_amperimetrica.png")
     )
+    
     GraficoCarta.update_layout(
         width=img_width * scale_factor,
         height=img_height * scale_factor,
         margin={"l": 0, "r": 0, "t": 0, "b": 0},
     )
-    #Que % está fuera de rango y en qué rangos de tiempo... estadistica de ello
-    
-    """    
-    
-    data=pd.DataFrame(pd.read_csv('./Data_Corriente.csv'))
-    data['time']=pd.to_datetime(data['time'], utc=True)
-    #data["time"].dt.strftime('%d,%m,%Y')
-    data['time']=data['time']+pd.DateOffset(hours=-5)  
-    data['time']=data['time'].dt.strftime('%d %h %Y,%H:%M:%S')
-    print(data)
-    # setting the axes projection as polar
-    plt.axes(projection = 'polar')
-    
-    # setting the radius
-    r = 1.5
-    
-    # creating an array containing the
-    # radian values
-    delta=(2 * np.pi)/len(data)
-    rads = np.arange(0, (2 * np.pi), delta)
-    rads=pd.DataFrame(rads,columns=['rads'])
-    data=data.join(rads)
-    data=data.set_index('rads')
-    data=data.dropna()
 
-    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-    ax.plot(data.index, data['AMP_MOTOR'])
-    ax.set_rmax(130)
-    ax.set_rmin(50)
-    ax.set_theta_offset(np.pi/2)
-    ax.set_theta_direction(-1)
-    #ax.set_rticks([250,350])  # Less radial ticks
-    #ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
-    delta2=int(len(data)/4)
-    ax.set_xticklabels([str(data.iloc[0]['time']), '', str(data.iloc[0+delta2]['time']), '', str(data.iloc[0+delta2*2]['time']), '', str(data.iloc[0+delta2*3]['time']), ''])
-    ax.grid(True)
-    ax.set_title("Carta Amperimétrica", va='bottom')
-    
-    GraficoCarta2=fig
-    
+
     """
-    
-    return [GraficoM1, GraficoM2, GraficoM3, GraficoOtro, GraficoTHDV, GraficoTHDI, GraficoFactores, CumTHDV, CumTHDI, CumFactores, GraficoVentana, GraficoCarta, TablaTHDV, TablaTHDI, TablaFactores]
+
+    return [GraficoM1, GraficoM2, GraficoM3, GraficoOtro, GraficoTHDV, GraficoTHDI, GraficoFactores, CumTHDV, CumTHDI, CumFactores, GraficoVentana, GraficoCarta2, TablaTHDV, TablaTHDI, TablaFactores]
 
 #Actualización de Variables
 @callback(
@@ -1109,6 +1125,7 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
 def actualizar_vars(var):
     
     Data=pd.read_csv("./DataGuardian.csv")
+    Data2=pd.read_csv("./Iden.csv")
     f = open('./pozo.json')
     pozo = json.load(f)
     
@@ -1232,6 +1249,7 @@ def actualizar_vars(var):
     
 
     #-----------Operatividad----------------------------------------------
+    
     nombre_pozo = "REPORTE PREDICTIVO POZO "+pozo["Pozo"]
     nombre_gerencia = "GERENCIA DE "+pozo["Gerencia"]
     
@@ -1275,7 +1293,7 @@ def actualizar_vars(var):
         textinfo='label+percent',
         textfont_size=10,
         hole=.4,
-        marker=dict(colors=["#108DE4", "#FF003D"])
+        marker=dict(colors=["green","#FF0038"])
         )
 
     #---------------- M1 -----------------------------------------------------------------------------------------
@@ -1322,21 +1340,20 @@ def actualizar_vars(var):
     
     EFIVFD=str(round(float(POACTM2)/float(POACTM1)*100,2))
     EFISUT=str(round(float(POACTM3)/float(POACTM2)*100,2))
-    EFIMB="--"
     PotHid=str(round(Data["POT_HID"].mean(),2))
+    EFIMB=str(round(float(PotHid)/Data["POTENCIAMOTOR"].mean()*100,2))
     EfiSis=str(round(float(PotHid)/float(POACTM1)*100,2))
     PNom=pozo["Nominales"]["VFD"]["Potencia Nominal"][0]
     PCARGAVFD=str(round(float(POAPM1)/PNom*100,2))
     PNom=pozo["Nominales"]["SUT"]["Potencia Nominal"][0]
     PCARGASUT=str(round(float(POAPM2)/PNom*100,2))
     
-    
-    EneAcum=str(round(Data["POACTPQM1T_kW"].sum()/20,2))
-    AguaAcum=str(round(Data["AGUA"].sum(),2)) #suma
-    CrudoAcum=str(round(Data["CRUDO"].sum(),2)) #suma
-    GasAcum="--"
-    LiqAcum=str(round(Data["AGUA"].sum()+Data["CRUDO"].sum(),2))
-    IC=str(round(float(EneAcum)/float(LiqAcum),2))
+    EneAcum="{:,.2f} kWhd".format(Data2["Er"].sum())
+    AguaAcum="{:,.2f} BFPD".format(Data["AGUA"].sum())
+    CrudoAcum="{:,.2f} BFPD".format(Data["CRUDO"].sum())
+    GasAcum="{:,.2f} KPCPD".format(Data["GAS"].sum())
+    LiqAcum="{:,.2f} BFPD".format(Data["CRUDO"].sum()+Data["AGUA"].sum())
+    IC="{:,.2f} kWh/BBL".format(Data2["Er"].sum()/(Data["CRUDO"].sum()+Data["AGUA"].sum()))
     Lutz="--"
  
     return [figTorta, nombre_pozo, nombre_gerencia, 
@@ -1352,8 +1369,9 @@ def actualizar_vars(var):
             FREQM3+" Hz", AMPM3+" A", POACTM3+" kW", POAPM3+" kVA", POREM3+" kVAR", FPOTM3+" %", DESVIM3+" %", DESVVM3+" %",
             
             EFIVFD+" %", EFISUT+" %", EFIMB+" %", PotHid+" kWhid", EfiSis+" %",
-            PCARGAVFD+" %", PCARGASUT+" %", EneAcum+" kWd", AguaAcum+" BFPD", CrudoAcum+" BFPD",
-            GasAcum+" BFPD", LiqAcum+" BFPD", IC, Lutz
+            PCARGAVFD+" %", PCARGASUT+" %",
+            
+            EneAcum, AguaAcum, CrudoAcum, GasAcum, LiqAcum, IC, Lutz
             
             ]
 
@@ -1365,7 +1383,7 @@ dash.clientside_callback(
             
             let Hoy = new Date();
             let HoyS = Hoy.toLocaleDateString();
-            document.querySelector("#Marca").innerHTML = "Reporte Generado por E2 Energía Eficiente el "+HoyS.toString();
+            document.querySelector("#Marca").innerHTML = "[v.0.1] Reporte Generado por E2 Energía Eficiente el "+HoyS.toString();
             
             html2canvas(document.querySelector("#Report")).then(canvas => {
             
@@ -1400,6 +1418,3 @@ dash.clientside_callback(
     Output('btn-Descargar','n_clicks'),
     Input('btn-Descargar','n_clicks')
 )
-
-if __name__ == '__main__':
-    app.run_server(debug=True)
