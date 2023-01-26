@@ -352,3 +352,24 @@ body {
     margin-bottom: 5px;
 
 }
+.SankeyCont{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+
+    margin-left: 10px;
+    margin-top: 10px;
+    align-content: center;
+    
+
+    width: 100%;
+    border: rgb(157, 196, 241) 1px solid;
+    border-radius: 10px;
+    background-color: rgb(248, 251, 254);
+}
+.SankeyContChild{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+}

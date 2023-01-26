@@ -4,9 +4,9 @@ import plotly.graph_objects as go
 import pandas as pd
 from dash.dependencies import Input, Output
 import json
-import math
+import numpy as np
 import dash
-import datetime
+
 
 dash.register_page(__name__, title="Reporte de Desempeño")
 
@@ -125,11 +125,47 @@ GraficaIndiceConsumo=html.Div([
 
 ],className="GraficosVariables")
 
+SankeyCont=html.Div([
+    
+
+    html.Div("Diagrama Sankey",className="Titulo1"),
+
+    html.Div([
+        
+        html.Div(dcc.Graph(id="SankeyGraphicPOAC"),className='SankeyGraphicClass'),
+        html.Div(dcc.Graph(id="SankeyGraphicPerdidas"),className='SankeyGraphicClass'),
+
+    
+    ],className="SankeyContChild"),
+    
+
+
+
+],className="SankeyCont")
+
+Data=pd.read_csv("./DataGuardian.csv") #Se peude mover, solo invoca el item del DropDown...
+listMultiSelect=list(Data.columns)+['DeltaE', 'IB100', 'GEI', 'IndiceConsumo', 'D.Energetico', 'D.Ambiental', 'D.Economico']
+listMultiSelect.pop(0)
+
+TenMultiSelect=html.Div([
+    
+    dcc.Graph(id="GraficoMulti2"),
+    html.Div([
+              html.Div(dcc.Dropdown(listMultiSelect,['IndiceConsumo','DeltaE', "IB100"],id="DropMulti2", multi=True, placeholder="Seleccione las señales a graficar"), style={"width":"40%", "margin-right":"5px"}), 
+              dbc.Button('Reset', id='resetMulti2', n_clicks=0, className="btn_reset")
+                         
+             ], className="DropMultiSelect")
+    
+], className="MultiSelectPadre")
+
+
 Botones=html.Div(
         [
             dbc.Button('Descargar PDF', id='btn-Descargar2', n_clicks=0, className="btn1")
 
         ], className="Buttons")
+
+
 
 Cuerpo= html.Div([
 
@@ -140,6 +176,8 @@ Cuerpo= html.Div([
     Operatividad,
     GraficaCumpDea,
     GraficaIndiceConsumo,
+    SankeyCont,
+    TenMultiSelect,
     html.Div(id="Marca2", className="MarcaText")
     
 
@@ -157,12 +195,11 @@ layout = html.Div([html.Div([Cuerpo], className="ReportMain", id="Report2"),
 
 
 )
-
 def update_output(DropIndicadores):
     Df_Variables=pd.read_csv("./Iden.csv")
     MinDate=Df_Variables['time'].iloc[0]
     MaxDate=Df_Variables['time'].iloc[-1]
-    print(MinDate, MaxDate)
+    #print(MinDate, MaxDate)
     Df_Variables=Df_Variables.dropna()
     Df_Variables['DeltaE']=Df_Variables['Er']-Df_Variables['Eb']
     Df_Variables['IB100']=(Df_Variables['Eb']/Df_Variables['Er']) * 100
@@ -174,13 +211,13 @@ def update_output(DropIndicadores):
     IndiceList=[]
     for i in range(len(Data)):
     
-        VolumenLiquido=Data.iloc[i,Data.columns.get_loc('AGUA')]+Data.iloc[i,Data.columns.get_loc('CRUDO')]
+        VolumenLiquido = Data.iloc[i,Data.columns.get_loc('AGUA')] + Data.iloc[i,Data.columns.get_loc('CRUDO')]
         IndiceConsumo= Df_Variables.iloc[i,Df_Variables.columns.get_loc('Er')] / VolumenLiquido
         IndiceList.append(IndiceConsumo)
 
 
     Df_Variables['IndiceConsumo']=IndiceList
-    print(Df_Variables["IndiceConsumo"])
+    #print(Df_Variables["IndiceConsumo"])
     Df_Variables["D.Energetico"]=Df_Variables["DeltaE"]
     Df_Variables["D.Ambiental"]=Df_Variables["DeltaE"]*0.126  #Agregar Factor de Emision al JSON
     Df_Variables["D.Economico"]= Df_Variables["DeltaE"]*350 #Agregar al JSON
@@ -193,6 +230,14 @@ def update_output(DropIndicadores):
         "D.Economico":["Desempeño Económico Diario","[ $ COP / día]"],
 
     }
+    
+    """    
+    dataDF=Df_Variables.to_json(orient ='index')
+    str_json = json.loads(dataDF)
+    
+    with open ("dataDF.json", "w") as file:
+        json.dump(str_json,file,indent=4)
+    """
     
     ColorLista1=[]
     for i in range(len(Df_Variables)):
@@ -293,13 +338,32 @@ def update_output(DropIndicadores):
     else:
         GraficoIndicadores.add_trace(go.Bar(x=Df_Variables['time'],
                                             y=Df_Variables[str(DropIndicadores)].dropna(),
-                                            ))
+                                            showlegend=True,
+                                            name="<b>"+ str(DropIndicadores) + "  Min: " +  str(round(Df_Variables[str(DropIndicadores)].min(),3) ) +"</b>"))
 
+        GraficoIndicadores.add_trace(go.Scatter(x=[None], y=[None], mode='markers',
+                       marker=dict(size=10, color='orange',symbol="square"),
+                       legendgroup="Max",
+                       showlegend=True,
+                       name="<b>"+ str(DropIndicadores) +" Max: " +  str(round(Df_Variables[str(DropIndicadores)].max(),3) ) +"</b>"))
+
+        GraficoIndicadores.add_trace(go.Scatter(x=[None], y=[None], mode='markers',
+                       marker=dict(size=10, color='orange',symbol="square"),
+                       legendgroup="Promedio",
+                       showlegend=True,
+                       name="<b> "+ str(DropIndicadores) +" Promedio " +  str(round(Df_Variables[str(DropIndicadores)].mean(),3) ) +"</b>"))
         
+        '''FechaMin=Df_Variables[Df_Variables['time']==Df_Variables[str(DropIndicadores)].min()]
+        GraficoIndicadores.add_annotation(x=FechaMin,y=Df_Variables[str(DropIndicadores)].iloc[1],text="Valor Minimo")'''
+
+
         GraficoIndicadores.update_traces(marker_color=ColorLista2,marker_line_color='#38563d')
+
+        #GraficoIndicadores.update_yaxes(autorange=True)
+
+        GraficoIndicadores.update_layout(yaxis_range=[0.7*Df_Variables[str(DropIndicadores)].min(),1.1*Df_Variables[str(DropIndicadores)].max()])
     
     return GraficoIndicadores                          
-    
 
 #Actualización de Variables
 @callback(
@@ -331,6 +395,8 @@ def update_output(DropIndicadores):
     Output('TablaCABLE2', 'figure'),
     Output('TablaMOTOR2', 'figure'),
     Output('TablaBOMBA2', 'figure'),
+    Output('SankeyGraphicPOAC','figure'),
+    Output('SankeyGraphicPerdidas','figure'),
 
     Input('fechaIni2', 'children')
 
@@ -433,7 +499,7 @@ def actualizar_vars(var):
                                 ))
     
                         
-                                
+    
                             
     GraficoDEA.add_trace(go.Line(x=Data2['time'],y=Data2["CUSUM"]+1000000,
                                 line = dict(dash="dot", color="gray"),
@@ -616,7 +682,106 @@ def actualizar_vars(var):
             height=225,
             font_size=10
             )
+
+
+    #Figura de Sankey Potencias Activas
     
+    DataSankey=pd.read_csv('.\DataGuardian.csv')
+    
+   
+    PerdidasCable=DataSankey['PERDIDAS_CAB'].mean()
+    PerdidasVFD=DataSankey['POACTPQM1T_kW'].mean()-DataSankey['POACTPQM2_kW'].mean()
+    PerdidasSUT=DataSankey['POACTPQM2_kW'].mean()-DataSankey['POACTPQM3_kW'].mean()
+    PerdidasMB=DataSankey['POTENCIAMOTOR'].mean()-DataSankey['POT_HID'].mean()
+    PerdidasTotales=PerdidasVFD+PerdidasMB+PerdidasSUT+ PerdidasCable
+    
+    
+
+    POACM1=DataSankey['POACTPQM1T_kW'].mean()
+    PotenciaMotor=POACM1-PerdidasTotales
+    
+
+
+    figSankeyPOAC = go.Figure(data=[go.Sankey(
+                        valuesuffix = "kWh",
+                        node = dict(
+                        pad = 15,
+                        thickness = 20,
+                        line = dict(width = 0.5),
+                        label = ['Potencia Entrada al sistema, {:,.2f} kWh '.format(POACM1),
+                                'Potencia Motor, {:,.2f} kWh'.format(PotenciaMotor),
+                                'Perdidas SUT, {:,.2f} kWh'.format(PerdidasSUT),
+                                'Perdidas VFD, {:,.2f}  kWh'.format(PerdidasVFD),
+                                'Perdidas Cable, {:,.2f} kWh'.format(PerdidasCable),
+                                ],
+                        
+                
+                        ),
+                        link = dict(
+                        source = [0, 0, 0, 0], 
+                        target = [1, 2, 3, 4],
+                        
+                        value = [ PotenciaMotor, PerdidasSUT , PerdidasVFD, PerdidasCable],
+                        
+                        ))])
+
+    figSankeyPOAC.update_layout(title={'text': "Potencia Entrada al Sistema [kWh]",
+                                            'y':0.85, # new
+                                            'x':0.5,
+                                            'xanchor': 'center',
+                                            'yanchor': 'top' # new
+
+                                        },
+                                paper_bgcolor="rgb(248, 251, 254)",
+                                width=650,
+                                height=450,
+
+                                font_size=12)
+
+    
+
+    # Figura de Sankey Perdidas
+
+    
+   
+    
+   
+    
+    figSankeyPerdidas = go.Figure(data=[go.Sankey(
+                        valuesuffix = " kWh",
+                        node = dict(
+                        pad = 15,
+                        thickness = 20,
+                        line = dict(color = "black", width = 0.5),
+                        label = ['Perdidas Totales, {:,.2f} kWh'.format(PerdidasTotales),
+                                'Perdidas SUT, {:,.2f} kWh'.format(PerdidasSUT),
+                                'Perdidas VFD, {:,.2f}  kWh'.format(PerdidasVFD) ,
+                                'Perdidas Motor Bomba, {:,.2f} kWh'.format(PerdidasMB),
+                                'Perdidas Cable, {:,.2f} kWh'.format(PerdidasCable) ],
+                        color=['#808b96','#f7dc6f', '#00ccb4', '#EC7063', '#85bd60']
+                        ),
+                        link = dict(
+                        source = [ 0, 0, 0, 0,0], # indices correspond to labels, eg A1, A2, A1, B1, ...
+                        target = [1, 1,2,3,4],
+                        value = [0, PerdidasSUT ,PerdidasVFD, PerdidasMB, PerdidasCable ],
+                        color=['#EC7063', '#FEF3C7', '#a6e3d7', '#EBBAB5','#85bd60']
+                        ))])
+
+    figSankeyPerdidas.update_layout(title={'text': "Perdidas de Energia [kWh]",
+                                            'y':0.85, # new
+                                            'x':0.5,
+                                            'xanchor': 'center',
+                                            'yanchor': 'top',
+                                                    # new
+
+                                            },
+                                    paper_bgcolor="rgb(248, 251, 254)",
+                                    width=650,
+                                    height=450,
+                                    font_size=12)
+    
+    
+
     
 
 
@@ -626,7 +791,179 @@ def actualizar_vars(var):
     
     return[figTorta, nombre_pozo, nombre_gerencia, FECHAINI, FECHAFIN,EneAcum1,AguaAcum1,CrudoAcum1,GasAcum1,LiqAcum1,DEnergetico,DAmbiental,DEconomico,GraficoDEA, figCumplimiento, 
            
-           figVFD, figSUT, figCABLE, figMOTOR, figBOMBA]
+           figVFD, figSUT, figCABLE, figMOTOR, figBOMBA,figSankeyPOAC,figSankeyPerdidas]
+
+
+#Gráficos MultiSelect Doble Eje
+@callback(
+    
+    Output('GraficoMulti2', 'figure'),
+    Output('DropMulti2','disabled'),
+    Output('resetMulti2','n_clicks'),
+    
+    
+    Input('DropMulti2','value'),
+    Input('resetMulti2','n_clicks')
+    
+    
+)
+def graficoMultiSelect(DropMultiValue, ClickReset):
+    
+    Data=pd.read_csv("./DataGuardian.csv")
+    Data2=pd.read_csv("./Iden.csv")
+    
+    Df_Variables=pd.read_csv("./Iden.csv")
+    Df_Variables=Df_Variables.dropna()
+    Df_Variables['DeltaE']=Df_Variables['Er']-Df_Variables['Eb']
+    Df_Variables['IB100']=(Df_Variables['Eb']/Df_Variables['Er']) * 100
+    Df_Variables['GEI']=Df_Variables['DeltaE']*0.126
+
+    #Data=pd.read_csv('./DataGuardian.csv')
+    DataL=Data[['time','AGUA','CRUDO']].dropna()
+    
+    IndiceList=[]
+    for i in range(len(DataL)):
+    
+        VolumenLiquido = DataL.iloc[i,DataL.columns.get_loc('AGUA')] + DataL.iloc[i,DataL.columns.get_loc('CRUDO')]
+        IndiceConsumo= Df_Variables.iloc[i,Df_Variables.columns.get_loc('Er')] / VolumenLiquido
+        IndiceList.append(IndiceConsumo)
+
+
+    Df_Variables['IndiceConsumo']=IndiceList
+    #print(Df_Variables["IndiceConsumo"])
+    Df_Variables["D.Energetico"]=Df_Variables["DeltaE"]
+    Df_Variables["D.Ambiental"]=Df_Variables["DeltaE"]*0.126  #Agregar Factor de Emision al JSON
+    Df_Variables["D.Economico"]= Df_Variables["DeltaE"]*350 #Agregar al JSON
+  
+    GraficoMulti=go.Figure()
+    GraficoMulti.update_layout(
+            showlegend=False,
+            paper_bgcolor="rgb(248, 251, 254)",
+            margin=dict(t=0, b=0, l=-0, r=0),
+            width=1300,
+            height=450,
+            font_size=10
+            )
+        
+    titles=[]
+    disabled=False
+    clicks=0
+    
+    lenDrop=len(DropMultiValue)
+    
+    
+    if lenDrop==1:
+        titles=[DropMultiValue[0],"--","--","--"] 
+    elif lenDrop==2:
+        titles=[DropMultiValue[0],DropMultiValue[1],"--","--"]
+    elif lenDrop==3:
+        titles=[DropMultiValue[0],DropMultiValue[1],DropMultiValue[2],"--"]
+    elif lenDrop>=4:
+        titles=[DropMultiValue[0],DropMultiValue[1],DropMultiValue[2], DropMultiValue[3]]
+        disabled=True
+        
+    if ClickReset>=1:
+        disabled=False
+        clicks=0
+            
+    colors=["#1f77b4", "#ff7f0e", "green", "#9467bd"]
+    
+    GraficoMulti.update_layout(
+        xaxis=dict(
+            domain=[0.3, 0.7]
+        ),
+        yaxis=dict(
+            title=titles[0],
+            titlefont=dict(
+                color=colors[0]
+            ),
+            tickfont=dict(
+                color=colors[0]
+            )
+        ),
+        yaxis2=dict(
+            title=titles[1],
+            titlefont=dict(
+                color=colors[1]
+            ),
+            tickfont=dict(
+                color=colors[1]
+            ),
+            anchor="x",
+            overlaying="y",
+            side="right",
+            
+        ),
+        yaxis3=dict(
+            title=titles[2],
+            titlefont=dict(
+                color=colors[2]
+            ),
+            tickfont=dict(
+                color=colors[2]
+            ),
+            anchor="free",
+            overlaying="y",
+            side="left",
+            position=0.23
+        ),
+        yaxis4=dict(
+            title=titles[3],
+            titlefont=dict(
+                color=colors[3]
+            ),
+            tickfont=dict(
+                color=colors[3]
+            ),
+            anchor="free",
+            overlaying="y",
+            side="right",
+            position=0.76
+        )
+    )
+
+    if DropMultiValue!=None:
+        ax=1
+        if lenDrop<len(DropMultiValue)+1:
+            for Signal in DropMultiValue:
+                    
+                    if Signal not in ['DeltaE', 'IB100', 'GEI', 'IndiceConsumo', 'D.Energetico', 'D.Ambiental', 'D.Economico']:
+                        
+                        D=Data[Data[Signal]>0]
+                        
+                        GraficoMulti.add_trace(
+                            go.Scatter(
+                                
+                            x=D["time"],
+                            y=D[Signal],
+                            name=Signal,
+                            yaxis=f"y{ax}",
+                            line_color=colors[ax-1],
+                            
+                        ))
+                        
+                    else:
+                        
+                        
+                        GraficoMulti.add_trace(
+                            go.Scatter(
+                                
+                            x=Df_Variables["time"],
+                            y=Df_Variables[Signal],
+                            name=Signal,
+                            yaxis=f"y{ax}",
+                            line_color=colors[ax-1],
+                            
+                        ))
+                        
+                        
+                        
+                    
+                    ax=ax+1
+
+        
+    return [GraficoMulti, disabled, clicks]
+
 
 
 dash.clientside_callback( 
@@ -637,7 +974,7 @@ dash.clientside_callback(
             
             let Hoy = new Date();
             let HoyS = Hoy.toLocaleDateString();
-            document.querySelector("#Marca2").innerHTML = "Reporte Generado por E2 Energía Eficiente el "+HoyS.toString();
+            document.querySelector("#Marca2").innerHTML = "[v.0.1] Reporte Generado por E2 Energía Eficiente el "+HoyS.toString();
             
             html2canvas(document.querySelector("#Report2")).then(canvas => {
             

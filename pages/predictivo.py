@@ -7,7 +7,7 @@ from dash.dependencies import Input, Output
 import json
 import math
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import time
 
 #app = Dash(__name__, assets_folder="assetsP", title="Reporte Predictivo")
@@ -26,12 +26,21 @@ listFactores=[]
 # ---------------- VARIABLES (Querys, csv, excel, json...)-------
 
 Data=pd.read_csv("./DataGuardian.csv") #Se peude mover, solo invoca el item del DropDown...
+
+listMultiSelect=list(Data.columns)+['DeltaE', 'IB100', 'GEI', 'IndiceConsumo', 'D.Energetico', 'D.Ambiental', 'D.Economico']
+listMultiSelect.pop(0)
+
 Data.rename(
     columns={
         
         'THDVTPQM1T':'Arm. Total de Voltaje'
         
         }, inplace=True)
+
+#Data2=pd.read_csv("./Iden.csv")
+#Data3=Data.join(Data2)
+
+#print(Data3.info())
 
 #Renombrar el resto..
 
@@ -197,6 +206,7 @@ Ventana = html.Div([
 
         html.Div(dcc.Graph(id="GraficoVentana")),
         html.Div(dcc.Graph(id="GraficoCarta")),
+        #html.Div(dcc.Slider(0,1,id="slider2", step=None, vertical=True), style={"width":"100px"}),
 
     
     ], className="VentanaPadre")
@@ -300,6 +310,16 @@ Vibraciones=html.Div([
     
     
     ],className="VibracionesPadre")
+TenMultiSelect=html.Div([
+    
+    dcc.Graph(id="GraficoMulti"),
+    html.Div([
+              html.Div(dcc.Dropdown(listMultiSelect,['POACTPQM1T_kW','POTENCIAMOTOR', 'AMPAPQM3_amp'],id="DropMulti", multi=True, placeholder="Seleccione las señales a graficar"), style={"width":"40%", "margin-right":"5px"}), 
+              dbc.Button('Reset', id='resetMulti', n_clicks=0, className="btn_reset")
+                         
+             ], className="DropMultiSelect")
+    
+], className="MultiSelectPadre")
 Botones=html.Div(
         [
             dbc.Button('Descargar PDF', id='btn-Descargar', n_clicks=0, className="btn1")
@@ -316,9 +336,8 @@ Cuerpo= html.Div([
     EnergiaProd,
     CalidadEneA,
     CalidadEneB,
-    #Vibraciones,
     Graficos,
-    #Botones,
+    TenMultiSelect,
     html.Div(id="Marca", className="MarcaText")
     
 ],className="Cuerpo")
@@ -460,7 +479,8 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
         annotation_bgcolor="#ff7f0e")
     
     GraficoOtro = go.Figure()
-    GraficoOtro.add_trace(go.Line(x=Data['time'], y=Data[str(DropOtro)].dropna()))
+    D=Data[Data[DropOtro]>0]
+    GraficoOtro.add_trace(go.Line(x=D['time'], y=D[DropOtro]))
     [undOtro, varOtro]=Rotulos(DropOtro)
     GraficoOtro.update_layout(
             showlegend=False,
@@ -1375,6 +1395,176 @@ def actualizar_vars(var):
             
             ]
 
+#Gráficos MultiSelect Doble Eje
+@callback(
+    
+    Output('GraficoMulti', 'figure'),
+    Output('DropMulti','disabled'),
+    Output('resetMulti','n_clicks'),
+    
+    
+    Input('DropMulti','value'),
+    Input('resetMulti','n_clicks')
+    
+    
+)
+def graficoMultiSelect(DropMultiValue, ClickReset):
+    
+    Data=pd.read_csv("./DataGuardian.csv")
+    Data2=pd.read_csv("./Iden.csv")
+    
+    Df_Variables=pd.read_csv("./Iden.csv")
+    Df_Variables=Df_Variables.dropna()
+    Df_Variables['DeltaE']=Df_Variables['Er']-Df_Variables['Eb']
+    Df_Variables['IB100']=(Df_Variables['Eb']/Df_Variables['Er']) * 100
+    Df_Variables['GEI']=Df_Variables['DeltaE']*0.126
+
+    #Data=pd.read_csv('./DataGuardian.csv')
+    DataL=Data[['time','AGUA','CRUDO']].dropna()
+    
+    IndiceList=[]
+    for i in range(len(DataL)):
+    
+        VolumenLiquido = DataL.iloc[i,DataL.columns.get_loc('AGUA')] + DataL.iloc[i,DataL.columns.get_loc('CRUDO')]
+        IndiceConsumo= Df_Variables.iloc[i,Df_Variables.columns.get_loc('Er')] / VolumenLiquido
+        IndiceList.append(IndiceConsumo)
+
+
+    Df_Variables['IndiceConsumo']=IndiceList
+    #print(Df_Variables["IndiceConsumo"])
+    Df_Variables["D.Energetico"]=Df_Variables["DeltaE"]
+    Df_Variables["D.Ambiental"]=Df_Variables["DeltaE"]*0.126  #Agregar Factor de Emision al JSON
+    Df_Variables["D.Economico"]= Df_Variables["DeltaE"]*350 #Agregar al JSON
+  
+    GraficoMulti=go.Figure()
+    GraficoMulti.update_layout(
+            showlegend=False,
+            paper_bgcolor="rgb(248, 251, 254)",
+            margin=dict(t=0, b=0, l=-0, r=0),
+            width=1300,
+            height=450,
+            font_size=10
+            )
+        
+    titles=[]
+    disabled=False
+    clicks=0
+    
+    lenDrop=len(DropMultiValue)
+    
+    
+    if lenDrop==1:
+        titles=[DropMultiValue[0],"--","--","--"] 
+    elif lenDrop==2:
+        titles=[DropMultiValue[0],DropMultiValue[1],"--","--"]
+    elif lenDrop==3:
+        titles=[DropMultiValue[0],DropMultiValue[1],DropMultiValue[2],"--"]
+    elif lenDrop>=4:
+        titles=[DropMultiValue[0],DropMultiValue[1],DropMultiValue[2], DropMultiValue[3]]
+        disabled=True
+        
+    if ClickReset>=1:
+        disabled=False
+        clicks=0
+            
+    colors=["#1f77b4", "#ff7f0e", "green", "#9467bd"]
+    
+    GraficoMulti.update_layout(
+        xaxis=dict(
+            domain=[0.3, 0.7]
+        ),
+        yaxis=dict(
+            title=titles[0],
+            titlefont=dict(
+                color=colors[0]
+            ),
+            tickfont=dict(
+                color=colors[0]
+            )
+        ),
+        yaxis2=dict(
+            title=titles[1],
+            titlefont=dict(
+                color=colors[1]
+            ),
+            tickfont=dict(
+                color=colors[1]
+            ),
+            anchor="x",
+            overlaying="y",
+            side="right",
+            
+        ),
+        yaxis3=dict(
+            title=titles[2],
+            titlefont=dict(
+                color=colors[2]
+            ),
+            tickfont=dict(
+                color=colors[2]
+            ),
+            anchor="free",
+            overlaying="y",
+            side="left",
+            position=0.23
+        ),
+        yaxis4=dict(
+            title=titles[3],
+            titlefont=dict(
+                color=colors[3]
+            ),
+            tickfont=dict(
+                color=colors[3]
+            ),
+            anchor="free",
+            overlaying="y",
+            side="right",
+            position=0.76
+        )
+    )
+
+    if DropMultiValue!=None:
+        ax=1
+        if lenDrop<len(DropMultiValue)+1:
+            for Signal in DropMultiValue:
+                    
+                    if Signal not in ['DeltaE', 'IB100', 'GEI', 'IndiceConsumo', 'D.Energetico', 'D.Ambiental', 'D.Economico']:
+                        
+                        D=Data[Data[Signal]>0]
+                        
+                        GraficoMulti.add_trace(
+                            go.Scatter(
+                                
+                            x=D["time"],
+                            y=D[Signal],
+                            name=Signal,
+                            yaxis=f"y{ax}",
+                            line_color=colors[ax-1],
+                            
+                        ))
+                        
+                    else:
+                        
+                        
+                        GraficoMulti.add_trace(
+                            go.Scatter(
+                                
+                            x=Df_Variables["time"],
+                            y=Df_Variables[Signal],
+                            name=Signal,
+                            yaxis=f"y{ax}",
+                            line_color=colors[ax-1],
+                            
+                        ))
+                        
+                        
+                        
+                    
+                    ax=ax+1
+
+        
+    return [GraficoMulti, disabled, clicks]
+
 dash.clientside_callback( 
     """
     
@@ -1388,7 +1578,7 @@ dash.clientside_callback(
             html2canvas(document.querySelector("#Report")).then(canvas => {
             
             var imgData = canvas.toDataURL('image/png');
-            var doc = new jsPDF('p', 'mm', "a2");
+            var doc = new jsPDF('p', 'mm', "b0");
             
             const pageHeight = doc.internal.pageSize.getHeight();
             const imgWidth = doc.internal.pageSize.getWidth();
@@ -1398,17 +1588,23 @@ dash.clientside_callback(
             
             var position = 3; // give some top padding to first page
 
-            doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+            //Pagina 1
 
-            while (heightLeft >= 0) {
-            position += heightLeft - imgHeight; // top padding for other pages
-            doc.addPage();
             doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
             
-            }
-    
+            //Pagina 2
+            
+            position += heightLeft - imgHeight; // top padding for other pages
+            doc.addPage();
+            doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            //heightLeft -= pageHeight;
+            
+            //Pagina 3
+            
+            doc.addPage();
+            doc.addImage(imgData, 'PNG', 0, position*2, imgWidth, imgHeight);
+
             doc.save('Reporte Predictivo.pdf');
             
 })}}
