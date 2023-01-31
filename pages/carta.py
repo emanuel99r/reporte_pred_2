@@ -65,7 +65,7 @@ def sliderIni(input):
     dias["Dia"]=diaL
     dias=dias.drop_duplicates(subset=['Dia'])
     d=list(dias["Dia"])
-    value=[d[1],d[3]]
+    value=[d[1],d[-2]]
     
     return value
 

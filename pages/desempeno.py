@@ -133,10 +133,13 @@ SankeyCont=html.Div([
     html.Div([
         
         html.Div(dcc.Graph(id="SankeyGraphicPOAC"),className='SankeyGraphicClass'),
-        html.Div(dcc.Graph(id="SankeyGraphicPerdidas"),className='SankeyGraphicClass'),
+        html.Div([dcc.Graph(id="SankeyGraphicPerdidas",className='SankeyGraphicClass'),html.Div("* Basado en el promedio de las potencias", id="SankeyComment")]),
 
     
+    
     ],className="SankeyContChild"),
+
+    
     
 
 
@@ -258,10 +261,10 @@ def update_output(DropIndicadores):
 
     GraficoIndicadores.update_layout(
                     paper_bgcolor="rgb(248, 251, 254)",
-                    plot_bgcolor='#d1d7db', 
+                    plot_bgcolor='#e5ecf6', 
                     margin=dict(t=15, b=0, l=0, r=0),
-                    width=750,
-                    height=380,
+                    width=800,
+                    height=450,
                     font_size=10,
                     yaxis_title="<b>"+dic[str(DropIndicadores)][1]+"</b>",
                     title={
@@ -271,7 +274,7 @@ def update_output(DropIndicadores):
                     'xanchor': 'center',
                     'yanchor': 'top'},
                     yaxis_range=[0.8*Df_Variables[str(DropIndicadores)].min(),1.15*Df_Variables[str(DropIndicadores)].max()],
-                    legend=dict(yanchor="top",y=0.99,xanchor='right',x=0.99)
+                    #legend=dict(yanchor="top",y=0.99,xanchor='right',x=0.99)
                     )
     
     if str(DropIndicadores)=="IndiceConsumo":
@@ -316,17 +319,18 @@ def update_output(DropIndicadores):
                        marker=dict(size=10, color='orange',symbol="square"),
                        legendgroup="IBM100 Max",
                        showlegend=True,
-                       name="<b>"+ "IB100 Max: " +  str(round(Df_Variables['IndiceConsumo'].max(),3) ) +"</b>"))
+                       name="<b>"+ "IB100 Max: " +  str(round(Df_Variables['IB100'].max(),3) ) +"</b>"))
         
         GraficoIndicadores.add_trace(go.Scatter(x=[None], y=[None], mode='markers',
                        marker=dict(size=10, color='orange',symbol="square"),
                        legendgroup="IBM100 Promedio",
                        showlegend=True,
-                       name="<b>"+ "IB100 Promedio: " +  str(round(Df_Variables['IndiceConsumo'].mean(),3) ) +"</b>"))
+                       name="<b>"+ "IB100 Promedio: " +  str(round(Df_Variables['IB100'].mean(),3) ) +"</b>"))
 
         GraficoIndicadores.update_traces(marker_color=ColorLista1,marker_line_color='#7b1623')
 
         GraficoIndicadores.add_shape(type='line',
+                line_dash="dash",
                 x0=MinDate,
                 y0=100,
                 x1=MaxDate,
@@ -334,6 +338,8 @@ def update_output(DropIndicadores):
                 line=dict(color='Red',),
                 xref='x',
                 yref='y')
+        
+        GraficoIndicadores.update_layout(yaxis_range=[0.9*Df_Variables['IB100'].min(),115])
     
     else:
         GraficoIndicadores.add_trace(go.Bar(x=Df_Variables['time'],
@@ -468,7 +474,7 @@ def actualizar_vars(var):
                 "x": 0.5,
                 "y": 0.55
             }]
-                
+    
     )
     figTorta.update_traces(
         hoverinfo='value',
@@ -481,15 +487,33 @@ def actualizar_vars(var):
     #Grafico Desempeño energetico
    
     ColorLista=[]
-    for i in range(len(Data2)):
-        if Data2["CUSUM"].iloc[i]>Data2["CUSUM"].iloc[i-1] or Data2["CUSUM"].iloc[i-1]==None:
-            ColorLista.append("red")
-        else:
-            ColorLista.append("green")
     
+    DataCusum=Data2["CUSUM"].dropna()
+    for i in range(len(DataCusum)):
+        print(i)
+        if i==0:
+            if DataCusum.iloc[i]<DataCusum.iloc[i+1]:
+                ColorLista.append('red')
+
+            else:
+                ColorLista.append('green')
+
+        
+        elif i>0:
+            if DataCusum.iloc[i]>DataCusum.iloc[i-1]:
+                ColorLista.append("red")
+            
+            else:
+                ColorLista.append("green")
+       
+
+    print(len(ColorLista))
+    print(ColorLista)
+
+    #Grafico de Cumplimiento
     GraficoDEA=go.Figure()
     GraficoDEA.add_trace(go.Line(x=Data2["time"],
-                                 y=Data2["CUSUM"],
+                                 y=Data2["CUSUM"].dropna(),
                                  line = dict(dash="dot", color="grey"),
                                  marker=dict(color=ColorLista,
                                  size=5, symbol="square"),
@@ -824,8 +848,8 @@ def graficoMultiSelect(DropMultiValue, ClickReset):
     IndiceList=[]
     for i in range(len(DataL)):
     
-        VolumenLiquido = DataL.iloc[i,DataL.columns.get_loc('AGUA')] + DataL.iloc[i,DataL.columns.get_loc('CRUDO')]
-        IndiceConsumo= Df_Variables.iloc[i,Df_Variables.columns.get_loc('Er')] / VolumenLiquido
+        VolumenLiquido = DataL['AGUA'].iloc[i] + DataL['CRUDO'].iloc[i]
+        IndiceConsumo= Df_Variables['Er'].iloc[i] / VolumenLiquido
         IndiceList.append(IndiceConsumo)
 
 
@@ -844,7 +868,7 @@ def graficoMultiSelect(DropMultiValue, ClickReset):
             height=450,
             font_size=10
             )
-        
+    
     titles=[]
     disabled=False
     clicks=0
@@ -868,59 +892,73 @@ def graficoMultiSelect(DropMultiValue, ClickReset):
             
     colors=["#1f77b4", "#ff7f0e", "green", "#9467bd"]
     
-    GraficoMulti.update_layout(
-        xaxis=dict(
-            domain=[0.3, 0.7]
-        ),
-        yaxis=dict(
-            title=titles[0],
-            titlefont=dict(
-                color=colors[0]
+    if lenDrop!=0:
+    
+        GraficoMulti.update_layout(
+            xaxis=dict(
+                domain=[0.3, 0.7]
             ),
-            tickfont=dict(
-                color=colors[0]
+            yaxis=dict(
+                title=titles[0],
+                titlefont=dict(
+                    color=colors[0]
+                ),
+                tickfont=dict(
+                    color=colors[0]
+                )
+            ),
+            yaxis2=dict(
+                title=titles[1],
+                titlefont=dict(
+                    color=colors[1]
+                ),
+                tickfont=dict(
+                    color=colors[1]
+                ),
+                anchor="x",
+                overlaying="y",
+                side="right",
+                
+            ),
+            yaxis3=dict(
+                title=titles[2],
+                titlefont=dict(
+                    color=colors[2]
+                ),
+                tickfont=dict(
+                    color=colors[2]
+                ),
+                anchor="free",
+                overlaying="y",
+                side="left",
+                position=0.23
+            ),
+            yaxis4=dict(
+                title=titles[3],
+                titlefont=dict(
+                    color=colors[3]
+                ),
+                tickfont=dict(
+                    color=colors[3]
+                ),
+                anchor="free",
+                overlaying="y",
+                side="right",
+                position=0.76
             )
-        ),
-        yaxis2=dict(
-            title=titles[1],
-            titlefont=dict(
-                color=colors[1]
-            ),
-            tickfont=dict(
-                color=colors[1]
-            ),
-            anchor="x",
-            overlaying="y",
-            side="right",
-            
-        ),
-        yaxis3=dict(
-            title=titles[2],
-            titlefont=dict(
-                color=colors[2]
-            ),
-            tickfont=dict(
-                color=colors[2]
-            ),
-            anchor="free",
-            overlaying="y",
-            side="left",
-            position=0.23
-        ),
-        yaxis4=dict(
-            title=titles[3],
-            titlefont=dict(
-                color=colors[3]
-            ),
-            tickfont=dict(
-                color=colors[3]
-            ),
-            anchor="free",
-            overlaying="y",
-            side="right",
-            position=0.76
         )
-    )
+
+    else:
+        
+            GraficoMulti.update_layout(
+            showlegend=False,
+            paper_bgcolor="rgb(248, 251, 254)",
+            margin=dict(t=0, b=0, l=-0, r=0),
+            width=550,
+            height=450,
+            font_size=10
+            )
+
 
     if DropMultiValue!=None:
         ax=1

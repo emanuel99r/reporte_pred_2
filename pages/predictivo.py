@@ -751,29 +751,29 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
         row="3",
         col="all")
     GraficoFactores.add_hrect(
-        y0=limFactores,
-        y1=1.5*Data[str(DropFactores)].max(),
+        y0=0.1*Data[str(DropFactores)].min(),
+        y1=limFactores,
         line_width=0,
         fillcolor="red", 
         opacity=0.1,
         annotation_text=f"Max: {limFactores}%", 
         annotation_position="bottom right"
         )
-    IncumData=Data.query(f"{DropFactores} > {limFactores}")
+    IncumData=Data.query(f"{DropFactores} < {limFactores}")
     Incum=IncumData[f"{DropFactores}"].count()
     Tiempos=pd.to_datetime(IncumData["time"], format="%Y-%m-%d %H:%M:%S")
     TiempoFuera=[]
     for i in range(1,len(Tiempos)-1):
         Diff=Tiempos.iloc[i+1].minute-Tiempos.iloc[i].minute
         TiempoFuera.append(Diff) 
-    CumData=Data.query(f"{DropFactores} < {limFactores}")
+    CumData=Data.query(f"{DropFactores} > {limFactores}")
     Cum=CumData[f"{DropFactores}"].count()
     CumFactores = go.Figure()
     CumFactores.add_trace(go.Bar(
         y=['Cumplimiento'],
         x=[Incum/(Cum+Incum)*100],
         text=f"<b>{round(Incum/(Cum+Incum)*HORASON,1)} Horas</b>",
-        name=f'Mayor a {limFactores}%',
+        name=f'Menor a {limFactores}%',
         orientation='h',
         marker=dict(
             color='rgba(255, 0, 61, 0.6)',
@@ -784,7 +784,7 @@ def update_output(DropM1, DropM2, DropM3, DropTHDI, DropOtro, DropFactores):
         y=['Cumplimiento'],
         x=[Cum/(Cum+Incum)*100],
         text=f"<b>{round(Cum/(Cum+Incum)*HORASON,1)} Horas</b>",
-        name=f'Menor a {limFactores}%',
+        name=f'Mayor a {limFactores}%',
         orientation='h',
         marker=dict(
             color='#7CBE7F',
@@ -1469,60 +1469,74 @@ def graficoMultiSelect(DropMultiValue, ClickReset):
             
     colors=["#1f77b4", "#ff7f0e", "green", "#9467bd"]
     
-    GraficoMulti.update_layout(
-        xaxis=dict(
-            domain=[0.3, 0.7]
-        ),
-        yaxis=dict(
-            title=titles[0],
-            titlefont=dict(
-                color=colors[0]
+    if lenDrop!=0:
+    
+        GraficoMulti.update_layout(
+            xaxis=dict(
+                domain=[0.3, 0.7]
             ),
-            tickfont=dict(
-                color=colors[0]
+            yaxis=dict(
+                title=titles[0],
+                titlefont=dict(
+                    color=colors[0]
+                ),
+                tickfont=dict(
+                    color=colors[0]
+                )
+            ),
+            yaxis2=dict(
+                title=titles[1],
+                titlefont=dict(
+                    color=colors[1]
+                ),
+                tickfont=dict(
+                    color=colors[1]
+                ),
+                anchor="x",
+                overlaying="y",
+                side="right",
+                
+            ),
+            yaxis3=dict(
+                title=titles[2],
+                titlefont=dict(
+                    color=colors[2]
+                ),
+                tickfont=dict(
+                    color=colors[2]
+                ),
+                anchor="free",
+                overlaying="y",
+                side="left",
+                position=0.23
+            ),
+            yaxis4=dict(
+                title=titles[3],
+                titlefont=dict(
+                    color=colors[3]
+                ),
+                tickfont=dict(
+                    color=colors[3]
+                ),
+                anchor="free",
+                overlaying="y",
+                side="right",
+                position=0.76
             )
-        ),
-        yaxis2=dict(
-            title=titles[1],
-            titlefont=dict(
-                color=colors[1]
-            ),
-            tickfont=dict(
-                color=colors[1]
-            ),
-            anchor="x",
-            overlaying="y",
-            side="right",
-            
-        ),
-        yaxis3=dict(
-            title=titles[2],
-            titlefont=dict(
-                color=colors[2]
-            ),
-            tickfont=dict(
-                color=colors[2]
-            ),
-            anchor="free",
-            overlaying="y",
-            side="left",
-            position=0.23
-        ),
-        yaxis4=dict(
-            title=titles[3],
-            titlefont=dict(
-                color=colors[3]
-            ),
-            tickfont=dict(
-                color=colors[3]
-            ),
-            anchor="free",
-            overlaying="y",
-            side="right",
-            position=0.76
         )
-    )
 
+    else:
+        
+            GraficoMulti.update_layout(
+            showlegend=False,
+            paper_bgcolor="rgb(248, 251, 254)",
+            margin=dict(t=0, b=0, l=-0, r=0),
+            width=550,
+            height=450,
+            font_size=10
+            )
+            
+            
     if DropMultiValue!=None:
         ax=1
         if lenDrop<len(DropMultiValue)+1:
