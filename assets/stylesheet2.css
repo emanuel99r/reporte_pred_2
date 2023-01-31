@@ -448,72 +448,8 @@ body {
     align-content: space-around;
 }
 
-
-.Links{
-
-    width: 99.9%;
-    height: 50px;
-    margin-bottom: 10px;
-    margin-left: 3px;
-
-    display: flex;
-    flex-direction: row;
-
-}
-
-.Link{
-
-    background-color: #C0CA1F;
-    width: 90%;
-    height: 90%;
-    margin: 5px;
-    border-radius: 5px;
-    border: #717b07 2px dashed;
-
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
-
-}
-
-.LinkInicio{
-
-    background-color: #004238;
-    width: 20%;
-    height: 90%;
-    margin: 5px;
-    border-radius: 5px;
-    border: #717b07 2px dashed;
-
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
-
-}
-
-a:link{
-    text-decoration: none;
-    color: #ffffff;
-    font-weight: bold;
-    font-size: 18px;
-
-    height: 100%;
-    width: 70%;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-a:visited {
-    color: 
-    #ffffff;;
-  }
-
 .LogoImg{
-    width: 40px;
+    width: 45px;
 }
 
 #FormatoFecha{
@@ -627,3 +563,74 @@ a:visited {
     
 
 }
+
+.MainLinks{
+
+    height: 500px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-direction: column;
+}
+
+.Links{
+
+    width: 99.9%;
+    height: 50px;
+    margin-bottom: 10px;
+    margin-left: 3px;
+
+}
+
+
+.Link{
+
+    background-color: #C0CA1F;
+    width: 35%;
+    height: 25%;
+    margin: 5px;
+    border-radius: 5px;
+    border: #717b07 2px dashed;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+
+}
+
+.LinkInicio{
+
+    background-color: #004238;
+    width: 10%;
+    height: 90%;
+    margin: 5px;
+    border-radius: 5px;
+    border: #717b07 2px dashed;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+
+}
+
+a:link{
+    text-decoration: none;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 18px;
+
+    height: 20%;
+    width: 70%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+a:visited {
+    color: 
+    #ffffff;;
+  }
